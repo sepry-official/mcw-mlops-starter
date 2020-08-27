@@ -1,5 +1,8 @@
+import json
+import os
 import argparse
 import azureml.core
+
 from azureml.core import Workspace, Experiment, Run, Datastore
 from azureml.data.azure_storage_datastore import AzureBlobDatastore
 from azureml.core.compute import AmlCompute
@@ -18,11 +21,16 @@ print("Pipeline SDK-specific imports completed")
 print("Azure ML SDK version:", azureml.core.VERSION)
 
 parser = argparse.ArgumentParser("pipelines_master")
-parser.add_argument("--aml_compute_target", type=str, help="compute target name", dest="aml_compute_target", required=True)
-parser.add_argument("--model_name", type=str, help="model name", dest="model_name", required=True)
-parser.add_argument("--build_number", type=str, help="build number", dest="build_number", required=True)
-parser.add_argument("--image_name", type=str, help="image name", dest="image_name", required=True)
-parser.add_argument("--path", type=str, help="path", dest="path", required=True)
+parser.add_argument("--aml_compute_target", type=str,
+                    help="compute target name", dest="aml_compute_target", required=True)
+parser.add_argument("--model_name", type=str,
+                    help="model name", dest="model_name", required=True)
+parser.add_argument("--build_number", type=str,
+                    help="build number", dest="build_number", required=True)
+parser.add_argument("--image_name", type=str,
+                    help="image name", dest="image_name", required=True)
+parser.add_argument("--path", type=str, help="path",
+                    dest="path", required=True)
 args = parser.parse_args()
 
 print("Argument 1: %s" % args.aml_compute_target)
@@ -46,7 +54,7 @@ print("found existing compute target.")
 # Create a new runconfig object
 run_amlcompute = RunConfiguration()
 
-# Use the cpu_cluster you created above. 
+# Use the cpu_cluster you created above.
 run_amlcompute.target = args.aml_compute_target
 
 # Enable Docker
@@ -79,9 +87,9 @@ print("train_output PipelineData object created")
 
 trainStep = PythonScriptStep(
     name="train",
-    script_name="train.py", 
+    script_name="train.py",
     arguments=["--model_name", args.model_name,
-              "--build_number", args.build_number],
+               "--build_number", args.build_number],
     compute_target=aml_compute,
     runconfig=run_amlcompute,
     source_directory=scripts_folder,
@@ -93,9 +101,9 @@ evaluate_output = PipelineData('evaluate_output', datastore=def_blob_store)
 
 evaluateStep = PythonScriptStep(
     name="evaluate",
-    script_name="evaluate.py", 
-    arguments=["--model_name", args.model_name,  
-               "--image_name", args.image_name, 
+    script_name="evaluate.py",
+    arguments=["--model_name", args.model_name,
+               "--image_name", args.image_name,
                "--output", evaluate_output],
     outputs=[evaluate_output],
     compute_target=aml_compute,
@@ -105,11 +113,9 @@ evaluateStep = PythonScriptStep(
 )
 print("evaluateStep created")
 
-evaluateStep.run_after(trainStep)
-steps = [evaluateStep]
 
-pipeline = Pipeline(workspace=ws, steps=steps)
-print ("Pipeline is built")
+pipeline = Pipeline(workspace=ws, steps=[trainStep, evaluateStep])
+print("Pipeline is built")
 
 pipeline.validate()
 print("Simple validation complete")
@@ -120,15 +126,15 @@ experiment_name = run.experiment.name
 pipeline_run = Experiment(ws, experiment_name).submit(pipeline)
 print("Pipeline is submitted for execution")
 
-pipeline_run.wait_for_completion(show_output=True, timeout_seconds=43200)
+pipeline_run.wait_for_completion(show_output=True)
 
 print("Downloading evaluation results...")
 # access the evaluate_output
-data = pipeline_run.find_step_run('evaluate')[0].get_output_data('evaluate_output')
+data = pipeline_run.find_step_run(
+    'evaluate')[0].get_output_data('evaluate_output')
 # download the predictions to local path
 data.download('.', show_progress=True)
 
-import json
 # load the eval info json
 with open(os.path.join('./', data.path_on_datastore, 'eval_info.json')) as f:
     eval_info = json.load(f)
