@@ -24,6 +24,7 @@ parser.add_argument("--image_name", type=str,
                     help="image name", dest="image_name", required=True)
 parser.add_argument("--output", type=str,
                     help="eval output directory", dest="output", required=True)
+parser.add_argument("--link", help="useless param")
 
 args = parser.parse_args()
 
