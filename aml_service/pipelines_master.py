@@ -126,29 +126,29 @@ print("Simple validation complete")
 run = Run.get_context()
 experiment_name = run.experiment.name
 
-pipeline_run = Experiment(ws, experiment_name).submit(pipeline)
+pipeline_run = Experiment(ws, experiment_name).submit(pipeline, continue_on_step_failure=True)
 print("Pipeline is submitted for execution")
 
-# pipeline_run.wait_for_completion(show_output=True)
+pipeline_run.wait_for_completion()
 
-# print("Downloading evaluation results...")
-# # access the evaluate_output
-# data = pipeline_run.find_step_run(
-#     'evaluate')[0].get_output_data('evaluate_output')
-# # download the predictions to local path
-# data.download('.', show_progress=True)
+print("Downloading evaluation results...")
+# access the evaluate_output
+data = pipeline_run.find_step_run(
+    'evaluate')[0].get_output_data('evaluate_output')
+# download the predictions to local path
+data.download('.', show_progress=True)
 
-# # load the eval info json
-# with open(os.path.join('./', data.path_on_datastore, 'eval_info.json')) as f:
-#     eval_info = json.load(f)
-# print("Printing evaluation results...")
-# print(eval_info)
+# load the eval info json
+with open(os.path.join('./', data.path_on_datastore, 'eval_info.json')) as f:
+    eval_info = json.load(f)
+print("Printing evaluation results...")
+print(eval_info)
 
-# print("Saving evaluation results for release pipeline...")
-# output_dir = os.path.join(args.path, 'outputs')
-# os.makedirs(output_dir, exist_ok=True)
-# filepath = os.path.join(output_dir, 'eval_info.json')
+print("Saving evaluation results for release pipeline...")
+output_dir = os.path.join(args.path, 'outputs')
+os.makedirs(output_dir, exist_ok=True)
+filepath = os.path.join(output_dir, 'eval_info.json')
 
-# with open(filepath, "w") as f:
-#     json.dump(eval_info, f)
-#     print('eval_info.json saved!')
+with open(filepath, "w") as f:
+    json.dump(eval_info, f)
+    print('eval_info.json saved!')
