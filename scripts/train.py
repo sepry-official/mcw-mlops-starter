@@ -37,6 +37,7 @@ parser.add_argument("--model_name", type=str,
                     help="model name", dest="model_name", required=True)
 parser.add_argument("--build_number", type=str,
                     help="build number", dest="build_number", required=True)
+parser.add_argument("--link", help="useless param")
 
 args = parser.parse_args()
 

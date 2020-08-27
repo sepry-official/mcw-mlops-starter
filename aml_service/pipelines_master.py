@@ -83,13 +83,14 @@ scripts_folder = 'scripts'
 def_blob_store = ws.get_default_datastore()
 
 train_output = PipelineData('train_output', datastore=def_blob_store)
+link = PipelineData('link', datastore=def_blob_store)
 print("train_output PipelineData object created")
 
 trainStep = PythonScriptStep(
     name="train",
     script_name="train.py",
     arguments=["--model_name", args.model_name,
-               "--build_number", args.build_number],
+               "--build_number", args.build_number, "--link", link],
     compute_target=aml_compute,
     runconfig=run_amlcompute,
     source_directory=scripts_folder,
@@ -104,7 +105,7 @@ evaluateStep = PythonScriptStep(
     script_name="evaluate.py",
     arguments=["--model_name", args.model_name,
                "--image_name", args.image_name,
-               "--output", evaluate_output],
+               "--output", evaluate_output, "--link", link],
     outputs=[evaluate_output],
     compute_target=aml_compute,
     runconfig=run_amlcompute,
